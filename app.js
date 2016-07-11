@@ -22,7 +22,7 @@ app.get('/', routes.index);
 app.get('/users', user.list);
  
 var server = http.createServer(app).listen(app.get('port'), function() {
-	console.log('Express server listening on port ' + app.get('port'));
+ console.log('Express server listening on port ' + app.get('port'));
 });
 
 var io = socket.listen(server);
@@ -30,50 +30,50 @@ var io = socket.listen(server);
 var usernames = [];
  
 io.sockets.on('connection', function (socket) {
-	socket.on('sendmsg', function (data) {
-		io.sockets.in(socket.room).emit('recvmsg', socket.username, data);
-	});
-
-	var claim = function (name) {
-		if (!name || usernames[name]) {
-			return false;
-		} else {
-			usernames[name] = true;
-			return true;
-		}
-	};
+ socket.on('sendmsg', function (data) {
+  io.sockets.in(socket.room).emit('recvmsg', socket.username, data);
+ });
  
-	var getGuestName = function () {
-		var name,
-		nextUserId = 1;
-		do {
-			name = 'Guest' + nextUserId;
-			nextUserId += 1;
-		} while (!claim(name));
-		return name;
-	};
-	
-	socket.on('guestjoin', function(roomname){
-		var username = getGuestName();
-		socket.username = username;
-		socket.room = roomname;
-		usernames[username] = username;
-		socket.join(roomname);
-		socket.emit('servernoti', 'green', 'you has connected J-Chat');
-		var userlist = new Array();
-		for(var name in usernames) {
-			userlist.push(usernames[name]);
-		}
-		io.socket.in(socket.room).emit('updateuser', userlist);
-		socket.broadcast.to(roomname).emit('servernoti', 'green', username + 'has connected to ' + roomname);
-		if (roomname!='lobby')
-			socket.emit('updaterooms', rooms, roomname);
-	});
-	
-	socket.on('disconnect', function() {
-		delete usernames[socket.username];
-		io.sockets.emit('updateusers', usernames);
-		socket.broadcast.emit('servernoti', 'red', socket.username + ' has disconnected');
-		socket.leave(socket.room);
-	});
+ var claim = function (name) {
+  if (!name || usernames[name]) {
+   return false;
+  } else {
+    usernames[name] = true;
+    return true;
+  }
+ };
+ 
+  var getGuestName = function () {
+    var name,
+      nextUserId = 1;
+    do {
+      name = 'Guest' + nextUserId;
+      nextUserId += 1;
+    } while (!claim(name));
+    return name;
+  };
+  
+ socket.on('guestjoin', function(roomname){  
+  var username = getGuestName();  
+  socket.username = username;
+  socket.room = roomname;
+  usernames[username] = username;
+  socket.join(roomname);
+  socket.emit('servernoti', 'green', 'you has connected J-Chat');  
+  var userlist = new Array();   
+  for (var name in usernames) {
+   userlist.push(usernames[name]);
+  }  
+  io.sockets.in(socket.room).emit('updateuser', userlist);  
+  socket.broadcast.to(roomname).emit('servernoti', 'green', username + ' has connected to ' + roomname);  
+  if (roomname!='lobby')
+   socket.emit('updaterooms', rooms, roomname);
+ }); 
+ 
+ socket.on('disconnect', function(){
+  delete usernames[socket.username];
+  io.sockets.emit('updateusers', usernames);
+  socket.broadcast.emit('servernoti', 'red', socket.username + ' has disconnected');
+  socket.leave(socket.room);
+ });
 });
